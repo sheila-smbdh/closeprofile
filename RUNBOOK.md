@@ -19,6 +19,7 @@ Hard rules:
 | Helen's sending address | `helen@smbdealhunter.xyz` |
 | Airtable base / table | `appDBhzdZfjoIFh2J` / `tblqt9BdHcwm0TzX6` ("All Clients") |
 | Slack channel | `#helen-email-digest` = `C0BTCGZSF9R` |
+| Sheila's Slack user id (for @-mentions) | `U0BM6J8KM32` → write `<@U0BM6J8KM32>` |
 | Jordan Kempster Close user id | `user_3IrYZLUcCBZrg2mb49wCybrxGBFTCxa5eqTHhE1ApuC` |
 | Jordan's calendar link | https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter |
 | Lead status "Potential" | `stat_v6aCXRI3yiAPBImnr8zJ1dyADO6m0mdPrhIvzK3Kdkj` |
@@ -224,9 +225,9 @@ _gmail:<Helen's reply message id>_
 _gmail:<Helen's reply message id>_
 ```
 
-**Flag (nothing created):**
+**Flag (nothing created)** — must start with the `<@U0BM6J8KM32>` mention so Sheila is notified:
 ```
-:warning: **Needs Sheila's review — nothing created: <name or email>**
+<@U0BM6J8KM32> :warning: **Needs your review — nothing created: <name or email>**
 • Reason: <reason>
 • Possible matches: <Close lead links / Airtable client names>
 • Gmail: <display_url>
@@ -237,5 +238,5 @@ _gmail:<Helen's reply message id>_
 
 Print a short summary: messages scanned, leads created (with links), existing leads
 given tasks, flagged, skipped as already handled. If any tool call failed partway
-through creating a lead, post a :warning: flag describing exactly what was and
+through creating a lead, post a :warning: flag (with the `<@U0BM6J8KM32>` mention) describing exactly what was and
 wasn't created so a human can clean it up. Do not retry lead creation in that case.
