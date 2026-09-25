@@ -14,9 +14,13 @@ When Helen replies to a prospect and CCs Jordan Kempster with a hand-off like
    contact = Jordan, Creation Date = Helen's reply date), a contact, a summary note,
    logs the prospect's email and Helen's reply, and adds Jordan's Day 1 / Day 2 /
    Day 5 follow-up tasks with the email templates.
-4. Posts to `#helen-email-digest`. Ambiguous cases (e.g. same name, different email)
-   are posted there as ":warning: Needs Sheila's review" instead of creating a lead.
-   Existing leads/clients are left alone.
+   If the person already has a Close lead, no new lead is created; Jordan's three
+   follow-up tasks are added to the existing lead instead.
+4. Posts one line, "Hourly Close Lead Creation Report", to `#helen-email-digest`,
+   with one thread reply per person (new lead / existing lead re-referred / needs review).
+   Nothing is posted in hours with no activity. Ambiguous cases (same name but a different
+   email, an Airtable client with no Close lead, several matching leads) are flagged as
+   ":warning: Needs Sheila's review" and nothing is created.
 
 The full step-by-step instructions the routine follows are in [RUNBOOK.md](RUNBOOK.md).
 The routine's prompt is a copy of that file. If you change one, update the other
@@ -26,5 +30,5 @@ The routine's prompt is a copy of that file. If you change one, update the other
 
 - Routine connectors: **Composio** (Jordan's Gmail `gmail_dah-ceyx`, Slack, Close `close` + `close_mcp`),
   **Airtable**, **Close**.
-- Only new hand-offs from the last 24 hours are picked up on each run; the Slack
-  channel doubles as the processed log (`gmail:<message id>` footer).
+- Only new hand-offs from the last 24 hours are picked up on each run; the report
+  threads double as the processed log (`gmail:<message id>` footer).

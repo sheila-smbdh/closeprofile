@@ -7,7 +7,8 @@ ambiguous, **flag it** (step 6) and move on. Do not edit any repository or push 
 Hard rules:
 - **Airtable is read-only.** Never create, update or delete Airtable records.
 - **Never send email** from anyone's mailbox. Only read Gmail.
-- Never modify or add to an existing Close lead. If the person already exists, do nothing.
+- On an existing Close lead, the ONLY thing you may add is Jordan's three follow-up tasks (step 5).
+  Never change its fields, status, owner, contacts or notes.
 - Only create a lead when every duplicate check in step 3 is clean.
 
 ## Constants
@@ -38,12 +39,14 @@ field unless the prospect's email states the answer outright (step 4e).
 ## Tools
 
 - Gmail: Composio `GMAIL_FETCH_EMAILS`, `GMAIL_FETCH_MESSAGE_BY_THREAD_ID`, always with `account: "gmail_dah-ceyx"`.
+  (Call `COMPOSIO_SEARCH_TOOLS` first to get a session id, then `COMPOSIO_MULTI_EXECUTE_TOOL`.)
 - Close search: Close connector `lead_search` (`full_text`, `name`) and `search` (natural language), or Composio `CLOSE_MCP_LEAD_SEARCH` / `CLOSE_MCP_SEARCH`.
 - Close writes: Composio `CLOSE_MCP_CREATE_LEAD` (supports `custom_fields`), `CLOSE_MCP_CREATE_CONTACT`, `CLOSE_MCP_CREATE_NOTE`, `CLOSE_MCP_CREATE_TASK`, `CLOSE_MCP_UPDATE_LEAD`
   (the `close_mcp` connection acts as Sheila). Email logging only exists as `CLOSE_CREATE_EMAIL`
   on the `close` connection (acts as Jay DeCristofaro) — that's expected.
 - Airtable: Airtable connector `search_records` (read only).
-- Slack: Composio `SLACK_SEND_MESSAGE`; history via `SLACK_FETCH_CONVERSATION_HISTORY` (or equivalent found with `COMPOSIO_SEARCH_TOOLS`).
+- Slack: Composio `SLACK_SEND_MESSAGE` (use `thread_ts` for thread replies); history via
+  `SLACK_FETCH_CONVERSATION_HISTORY` and thread replies via `SLACK_FETCH_MESSAGE_THREAD_FROM_A_CONVERSATION`.
 
 ## Step 1 — Find trigger emails
 
@@ -69,8 +72,11 @@ If nothing qualifies, stop here (no Slack post).
 
 ## Step 2 — Skip already-handled messages
 
-Read the last 2 days of `#helen-email-digest` history (`SLACK_FETCH_CONVERSATION_HISTORY`, `oldest` = now − 2 days). If a message there already
-contains `gmail:<this message id>`, skip it: it was already created or flagged.
+Read the last 2 days of `#helen-email-digest` (`SLACK_FETCH_CONVERSATION_HISTORY`, `oldest` = now − 2 days).
+For every top-level message whose text starts with `Hourly Close Lead Creation Report`, fetch its
+thread replies (`SLACK_FETCH_MESSAGE_THREAD_FROM_A_CONVERSATION` with its `ts`). Also look at the
+top-level messages themselves (older runs posted there). If any message or reply contains
+`gmail:<this message id>`, skip that email: it was already handled.
 
 ## Step 3 — Identify the prospect and check for duplicates
 
@@ -92,11 +98,18 @@ Airtable "All Clients" (`search_records`, read only):
 5. query = full name, fields `["Name", "Additional Member Name", "Name of Partner"]`
 6. If phone known: query = `+1XXXXXXXXXX`, fields `["Member Phone Number", "Partner Phone Number"]`
 
-Decide:
-- **Email or phone matches** any Close lead/contact or Airtable record → already exists → **do nothing** (no lead, no Slack post). Go to next message.
-- **Full name matches exactly** (same first + last name, case-insensitive) in Close or Airtable **but email/phone do not** → **flag** (reason: "name matches existing record(s) but email differs", include links/record names). Do not create.
+Decide (first matching rule wins):
+- **Email or phone matches exactly one Close lead** → the person already has a Close profile →
+  **do not create a lead.** Add Jordan's three tasks to that existing lead (step 5, using its
+  `lead_id` and the matching contact's `contact_id`), then report it (step 6, "existing lead").
+- **Email or phone matches more than one Close lead** → **flag** (reason: "matches multiple Close leads", list them).
+- **Email or phone matches only an Airtable client** (no Close lead) → **flag**
+  (reason: "existing client in Airtable but no Close profile", include the client name).
+- **Full name matches exactly** (same first + last name, case-insensitive) in Close or Airtable
+  **but email/phone do not** → **flag** (reason: "name matches existing record(s) but email differs",
+  include links/record names). Do not create.
 - Only surname or partial matches (e.g. other "Habib"s) → not a duplicate.
-- All clean → step 4.
+- All clean → step 4 (new lead).
 
 ## Step 4 — Create the Close lead
 
@@ -137,9 +150,12 @@ e. Qualification fields: only if the prospect's email says so outright. Example:
    `What does your search criteria look like?` (`cf_fMji3IHe85zXS7ze4egNyKjSmGvLgsC5HqVTGNdZ4mo`)
    via `CLOSE_MCP_UPDATE_LEAD`. Never guess liquidity, timeline, etc.
 
-## Step 5 — Create Jordan's three tasks
+## Step 5 — Create Jordan's three tasks (new leads AND existing leads)
 
-`CLOSE_MCP_CREATE_TASK` with `assigned_to` = Jordan, `lead_id` = new lead, `contact_id` = new contact,
+Same three tasks either way. On an existing lead, prefix Task 1's text with
+`Helen re-referred this existing lead on <reply date>. ` so Jordan has context.
+
+`CLOSE_MCP_CREATE_TASK` with `assigned_to` = Jordan, `lead_id` = the new (or existing) lead, `contact_id` = the prospect's contact on it,
 `due_date` as below, `send_notification: true`. Let D0 = today (America/Denver).
 
 **Task 1**, due D0:
@@ -175,23 +191,42 @@ Hi <First>,
 Helen mentioned you were interested, but we haven't had a chance to connect yet. Should I stop following up?
 ```
 
-## Step 6 — Slack
+## Step 6 — Slack report (one parent line + one thread reply per person)
 
-**Lead created** → `SLACK_SEND_MESSAGE` to `C0BTCGZSF9R`, `markdown_text`:
+Collect every outcome from this run first. **If there are none (nothing created, no tasks
+added, nothing flagged), post nothing.** Otherwise:
+
+1. Post the parent message to `C0BTCGZSF9R` with `markdown_text` exactly:
+   `Hourly Close Lead Creation Report`
+   Save the returned `ts`.
+2. For each outcome, post one reply with `SLACK_SEND_MESSAGE`, `channel: C0BTCGZSF9R`,
+   `thread_ts: <parent ts>` (do NOT set `reply_broadcast`):
+
+**New lead created:**
 ```
-:new: **New Close lead from Helen's inbox: <Full Name>**
+:new: **New lead: <Full Name>**
 • Email: <email> | Phone: <phone or —>
 • <title, company if known>
 • Asked: <one-line summary>
 • Helen looped in Jordan on <reply date>
-• Close: <lead URL https://app.close.com/lead/<lead_id>/>
+• Close: https://app.close.com/lead/<lead_id>/
 • Tasks for Jordan: Day 1 (<D0>), Day 2 (<D0+1>), Day 5 breakup (<D0+5>)
 _gmail:<Helen's reply message id>_
 ```
 
-**Flag** (not created) → same channel:
+**Existing Close lead (tasks added, no new lead):**
 ```
-:warning: **Needs Sheila's review — lead NOT created: <name or email>**
+:repeat: **Existing lead re-referred: <Full Name>**
+• Already in Close: https://app.close.com/lead/<lead_id>/ (status: <status label>)
+• Asked: <one-line summary>
+• Helen looped in Jordan on <reply date>
+• Added tasks for Jordan: Day 1 (<D0>), Day 2 (<D0+1>), Day 5 breakup (<D0+5>)
+_gmail:<Helen's reply message id>_
+```
+
+**Flag (nothing created):**
+```
+:warning: **Needs Sheila's review — nothing created: <name or email>**
 • Reason: <reason>
 • Possible matches: <Close lead links / Airtable client names>
 • Gmail: <display_url>
@@ -200,7 +235,7 @@ _gmail:<Helen's reply message id>_
 
 ## Step 7 — Finish
 
-Print a short summary: messages scanned, leads created (with links), flagged,
-skipped as existing, skipped as already handled. If any tool call failed partway
+Print a short summary: messages scanned, leads created (with links), existing leads
+given tasks, flagged, skipped as already handled. If any tool call failed partway
 through creating a lead, post a :warning: flag describing exactly what was and
 wasn't created so a human can clean it up. Do not retry lead creation in that case.
