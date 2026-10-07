@@ -7,6 +7,7 @@ ambiguous, **flag it** (step 6) and move on. Do not edit any repository or push 
 Hard rules:
 - **Airtable is read-only.** Never create, update or delete Airtable records.
 - **Never send email** from anyone's mailbox. Only read Gmail.
+- **The Email Triage Tracker sheet is read-only.** Never write to it.
 - On an existing Close lead, the ONLY thing you may add is Jordan's three follow-up tasks (step 5).
   Never change its fields, status, owner, contacts or notes.
 - Only create a lead when every duplicate check in step 3 is clean.
@@ -24,6 +25,8 @@ Hard rules:
 | Jordan's calendar link | https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter |
 | Lead status "Potential" | `stat_v6aCXRI3yiAPBImnr8zJ1dyADO6m0mdPrhIvzK3Kdkj` |
 | Timezone for dates | America/Denver (Jordan's) |
+| Email Triage Tracker (Google Sheet, read only) | `1auWB8iQAwTYQrKhgHhb-paUuCH35j35RDiQdSC5uhBQ`, tab `Tracker (JordanK)` |
+| Google Sheets (Composio account) | `googlesheets_gyte-urlar` |
 
 Close lead custom fields to set:
 
@@ -46,6 +49,7 @@ field unless the prospect's email states the answer outright (step 4e).
   (the `close_mcp` connection acts as Sheila). Email logging only exists as `CLOSE_CREATE_EMAIL`
   on the `close` connection (acts as Jay DeCristofaro) — that's expected.
 - Airtable: Airtable connector `search_records` (read only).
+- Google Sheets: Composio `GOOGLESHEETS_BATCH_GET` with `account: "googlesheets_gyte-urlar"` (read only).
 - Slack: Composio `SLACK_SEND_MESSAGE` (use `thread_ts` for thread replies); history via
   `SLACK_FETCH_CONVERSATION_HISTORY` and thread replies via `SLACK_FETCH_MESSAGE_THREAD_FROM_A_CONVERSATION`.
 
@@ -161,8 +165,30 @@ Same three tasks either way. On an existing lead, prefix Task 1's text with
 
 **Task 1**, due D0:
 ```
-Day 1 (Helen referral): Respond TODAY. Call <First> at <phone or "no number yet — reply on Helen's thread and ask for best number"> or get a call booked. Calendar: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
+Day 1 (Helen referral): Respond TODAY. Call <First> at <phone or "no number yet — reply on Helen's thread and ask for best number"> or get a call booked. Reply-all on Helen's thread with:
+
+<Day 1 draft>
 ```
+
+**Day 1 draft.** Jordan's first-response emails are pre-drafted in column N
+("Suggested Setter 1st Response") of the `Tracker (JordanK)` tab. Read the tab once per run
+(`GOOGLESHEETS_BATCH_GET`, `ranges: ["'Tracker (JordanK)'!A1:N2000"]`). Columns used:
+A = Date, D = Recommended Action, I = Email Sender, J = Email Title, N = draft.
+
+Find the prospect's row: column D is `Send to Jordan`, column N is not blank, column J equals
+the subject of Helen's reply (ignore case and leading `Re:` / `RE:` / `Fwd:`), and column I
+matches the prospect (full name, first name, or the display name on their email, ignoring case).
+If several rows match, use the one with the latest Date.
+
+- **Row found** → use column N verbatim, except replace `[Calendly Link]` with Jordan's
+  calendar link and `[today/tomorrow]` with `today`. Don't rewrite anything else.
+- **No row, or the sheet can't be read** → use this default instead (pick the variant by
+  whether you have their phone number), and say so in the Slack report (step 6):
+  ```
+  Hi <First>,
+
+  Picking up from Helen, I'd love to grab 15 min to learn more and see how we can help. <"I'll give you a call today." if phone known, else "What's the best number for me to call?"> Alternatively, you can grab 15 min here on my calendar: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
+  ```
 
 **Task 2**, due D0 + 1 day:
 ```
@@ -212,6 +238,7 @@ added, nothing flagged), post nothing.** Otherwise:
 • Helen looped in Jordan on <reply date>
 • Close: https://app.close.com/lead/<lead_id>/
 • Tasks for Jordan: Day 1 (<D0>), Day 2 (<D0+1>), Day 5 breakup (<D0+5>)
+• Day 1 draft: <"from tracker row <n>" or "default — no tracker draft found">
 _gmail:<Helen's reply message id>_
 ```
 
@@ -222,6 +249,7 @@ _gmail:<Helen's reply message id>_
 • Asked: <one-line summary>
 • Helen looped in Jordan on <reply date>
 • Added tasks for Jordan: Day 1 (<D0>), Day 2 (<D0+1>), Day 5 breakup (<D0+5>)
+• Day 1 draft: <"from tracker row <n>" or "default — no tracker draft found">
 _gmail:<Helen's reply message id>_
 ```
 
