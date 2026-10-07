@@ -208,7 +208,9 @@ Helen's reply has a different thread id in Jordan's mailbox, so match through He
    ```
    Hi <First>,
 
-   Picking up from Helen, I'd love to grab 15 min to learn more and see how we can help. What's the best number for me to call? Alternatively, you can grab 15 min here on my calendar: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
+   Picking up from Helen, I'd love to grab 15 min to learn more and see how we can help. What's the best number for me to call?
+
+   Alternatively, you can grab 15 min here on my calendar: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
    ```
    Note the source (`tracker row <n>` or `fallback: <why>`) for the Slack report.
 
@@ -298,7 +300,8 @@ Also `CLOSE_LIST_ACTIVITIES` with `activity_type: "call"` for the same lead.
 
 ### 6c. Decide (first matching rule wins)
 
-1. **A draft already exists**: any email on the lead with `status: "draft"` and `user_id` = Jordan →
+1. **A draft already exists**: any email on the lead with `status: "draft"` and sender
+   `jkempster@smbdealhunter.xyz`, whoever its `user_id` is (it changes to whoever last edited the draft) →
    skip (it's either today's draft or an earlier one he hasn't sent; never stack a second draft).
 2. **Jordan already sent this one**: Day 1 → any `sent` email from `jkempster@smbdealhunter.xyz` after the
    hand-off. Day 2 / Day 5 → any `sent` email from him dated on or after the task's due date (America/Denver).
@@ -322,6 +325,8 @@ or you only have an email address):
 - **Day 1**: the email inside the Day 1 task text, i.e. everything after the line that starts with
   `Email to send now` (or, on older tasks, everything from `Hi <First>,` onward). Use it verbatim, keep
   `[today/tomorrow]` brackets, but leave out a trailing `Name unknown: …` line (that's a note for Jordan).
+  The only change you make: if `Alternatively, you can grab 15 min…` sits in the same paragraph as the
+  sentence before it, start a new paragraph for it (blank line before `Alternatively`).
   If the task has no email in it, use the step 5a fallback draft.
 - **Day 2**, one version only:
   - Jordan logged an outbound call to the prospect since the hand-off (call activity, `direction: outbound`):
@@ -350,9 +355,10 @@ or you only have an email address):
 
 **Signature**: the API does not add Jordan's signature, so append it yourself. `body_html` is the body,
 one `<div>` per line (empty line = `<div><br></div>`, links as `<a href="…">…</a>`), then two empty lines,
-then exactly:
+then exactly (Book a Call and Linkedin each in their own `<div>`, with no `<br>` between them, or Close shows
+extra blank lines):
 ```html
-<div><strong><span data-system-generated="signature">Jordan Kempster - Partnership Development Associate</span></strong><span data-system-generated="signature"><br>Cell- +1 573-594-5747<br>Email- </span><a href="mailto:Jkempster@smbdealhunter.xyz"><span data-system-generated="signature">Jkempster@smbdealhunter.xyz</span></a><span data-system-generated="signature"><br></span><a href="https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter"><span data-system-generated="signature">Book a Call With Me</span></a><span data-system-generated="signature"><br></span><a href="https://www.linkedin.com/in/jordan-kempster-443a043a4/"><span data-system-generated="signature">Linkedin</span></a></div><div><span data-system-generated="signature"><img src="https://closeio-filepicker.s3.amazonaws.com/2026-08-06%2F2mdbyTLNZGdz16erUSTNxl%2F1786050260952-1778012856507.jpg" alt="1778012856507.jpg" style="width: 441px; height: 110.758px;"></span></div>
+<div><strong><span data-system-generated="signature">Jordan Kempster - Partnership Development Associate</span></strong><span data-system-generated="signature"><br>Cell- +1 573-594-5747<br>Email- </span><a href="mailto:Jkempster@smbdealhunter.xyz"><span data-system-generated="signature">Jkempster@smbdealhunter.xyz</span></a></div><div><a href="https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter"><span data-system-generated="signature">Book a Call With Me</span></a></div><div><a href="https://www.linkedin.com/in/jordan-kempster-443a043a4/"><span data-system-generated="signature">Linkedin</span></a></div><div><span data-system-generated="signature"><img src="https://closeio-filepicker.s3.amazonaws.com/2026-08-06%2F2mdbyTLNZGdz16erUSTNxl%2F1786050260952-1778012856507.jpg" alt="1778012856507.jpg" style="width: 441px; height: 110.758px;"></span></div>
 ```
 `body_text` is the plain body followed by:
 ```
@@ -361,6 +367,8 @@ then exactly:
 Jordan Kempster - Partnership Development Associate
 Cell- +1 573-594-5747
 Email- Jkempster@smbdealhunter.xyz
+Book a Call With Me: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
+Linkedin: https://www.linkedin.com/in/jordan-kempster-443a043a4/
 ```
 
 **Create it**: `CLOSE_CREATE_EMAIL`, `account: "close_scarid-corin"`:
