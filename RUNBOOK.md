@@ -2,15 +2,17 @@
 
 You are running an automated, unattended job. No human is watching this session.
 Follow these steps exactly, then stop. Never ask questions; when something is
-ambiguous, **flag it** (step 6) and move on. Do not edit any repository or push code.
+ambiguous, **flag it** (step 7) and move on. Do not edit any repository or push code.
 
 Hard rules:
 - **Airtable is read-only.** Never create, update or delete Airtable records.
-- **Never send email** from anyone's mailbox. Only read Gmail.
+- **Never send email** from anyone's mailbox. Only read Gmail. In Close you may only create
+  email activities with `status: "inbox"`/`"sent"` (logging, step 4d) or `status: "draft"`
+  (Jordan's drafts, step 6). Never use `outbox` or `scheduled`, and never update or delete a draft.
 - **Helen's mailbox and the Google Sheets tracker are read-only** (step 5a). Never write,
   label, draft in or modify either.
-- On an existing Close lead, the ONLY thing you may add is Jordan's three follow-up tasks (step 5).
-  Never change its fields, status, owner, contacts or notes.
+- On an existing Close lead, the ONLY things you may add are Jordan's three follow-up tasks (step 5)
+  and Jordan's email drafts (step 6). Never change its fields, status, owner, contacts or notes.
 - Only create a lead when every duplicate check in step 3 is clean.
 
 ## Constants
@@ -25,6 +27,8 @@ Hard rules:
 | Slack channel | `#helen-email-digest` = `C0BTCGZSF9R` |
 | Sheila's Slack user id (for @-mentions) | `U0BM6J8KM32` → write `<@U0BM6J8KM32>` |
 | Jordan Kempster Close user id | `user_3IrYZLUcCBZrg2mb49wCybrxGBFTCxa5eqTHhE1ApuC` |
+| Jordan's Close email account | `emailacct_0UnxgqOZ98Bi46WBLOxgoHebCPapV4neX5PjyxRbJT0` (sender `Jordan Kempster <jkempster@smbdealhunter.xyz>`) |
+| Helen's Close email account (her synced mail) | `emailacct_eC4EKGiDundEqqsze68OX0rOFuvLU8CGmbgHr4FrUqw` |
 | Jordan's calendar link | https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter |
 | Lead status "Potential" | `stat_v6aCXRI3yiAPBImnr8zJ1dyADO6m0mdPrhIvzK3Kdkj` |
 | Timezone for dates | America/Denver (Jordan's) |
@@ -50,7 +54,12 @@ field unless the prospect's email states the answer outright (step 4e).
 - Close search: Close connector `lead_search` (`full_text`, `name`) and `search` (natural language), or Composio `CLOSE_MCP_LEAD_SEARCH` / `CLOSE_MCP_SEARCH`.
 - Close writes: Composio `CLOSE_MCP_CREATE_LEAD` (supports `custom_fields`), `CLOSE_MCP_CREATE_CONTACT`, `CLOSE_MCP_CREATE_NOTE`, `CLOSE_MCP_CREATE_TASK`, `CLOSE_MCP_UPDATE_LEAD`
   (the `close_mcp` connection acts as Sheila). Email logging only exists as `CLOSE_CREATE_EMAIL`
-  on the `close` connection (acts as Jay DeCristofaro) — that's expected.
+  on the `close` connection. It has two accounts, so always pass `account`:
+  `close_scarid-corin` (Sheila, use this) or `close_jinks-lamany` (Jay). Older logged emails show Jay — that's expected.
+- Close drafts for Jordan (step 6): Composio `CLOSE_CREATE_EMAIL` with `account: "close_scarid-corin"` and
+  `status: "draft"`. Do NOT use `CLOSE_MCP_CREATE_DRAFT_EMAIL`: it makes the draft Sheila's and appends her signature.
+- Close tasks and email/call history: Close connector `find_tasks`, Composio `CLOSE_LIST_ACTIVITIES`
+  (`activity_type: "email"` or `"call"`, `lead_ids`, `account: "close_scarid-corin"`).
 - Airtable: Airtable connector `search_records` (read only).
 - Slack: Composio `SLACK_SEND_MESSAGE` (use `thread_ts` for thread replies); history via
   `SLACK_FETCH_CONVERSATION_HISTORY` and thread replies via `SLACK_FETCH_MESSAGE_THREAD_FROM_A_CONVERSATION`.
@@ -75,7 +84,7 @@ talk to the person, e.g.:
 Skip: plain forwards Helen sends only to Jordan ("Fwd:"), messages where the
 @Jordan mention is only inside quoted text, and messages from anyone else.
 
-If nothing qualifies, stop here (no Slack post).
+If nothing qualifies, skip to step 6 (Jordan's drafts still run every hour).
 
 ## Step 2 — Skip already-handled messages
 
@@ -116,7 +125,7 @@ Airtable "All Clients" (`search_records`, read only):
 Decide (first matching rule wins):
 - **Email or phone matches exactly one Close lead** → the person already has a Close profile →
   **do not create a lead.** Add Jordan's three tasks to that existing lead (step 5, using its
-  `lead_id` and the matching contact's `contact_id`), then report it (step 6, "existing lead").
+  `lead_id` and the matching contact's `contact_id`), then report it (step 7, "existing lead").
 - **Email or phone matches more than one Close lead** → **flag** (reason: "matches multiple Close leads", list them).
 - **Email or phone matches only an Airtable client** (no Close lead) → **flag**
   (reason: "existing client in Airtable but no Close profile", include the client name).
@@ -222,14 +231,14 @@ its last line; in Tasks 2 and 3 write `Hi there,` instead of `Hi <First>,`.
 ```
 Day 1 (Helen referral): Respond TODAY. Call <First> at <phone or "no number yet — reply on Helen's thread and ask for best number"> or get a call booked. Calendar: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
 
-Email to send now, reply-all on Helen's thread (keep Helen on it):
+Email to send now: it's already drafted in the reply box on this lead (Helen's thread, Helen cc'd). Proofread, edit, send. Copy below in case the draft isn't there:
 
 <draft>
 ```
 
 **Task 2**, due D0 + 1 day:
 ```
-Day 2 check-in: Call booked? Lead responded? If NOT → call again + send follow-up email on the same thread:
+Day 2 check-in: Call booked? Lead responded? If NOT → call again + send follow-up email on the same thread. The email is drafted in the reply box on this lead on the due date (only if they haven't replied or booked). Copy below in case:
 
 If you have their number and called:
 Hi <First>,
@@ -248,17 +257,129 @@ What's the best number to reach you at?
 
 **Task 3**, due D0 + 5 days:
 ```
-Day 5 breakup email — ONLY if Day 2 also went nowhere (still no response / no booked call). Email only, no call. Same thread:
+Day 5 breakup email — ONLY if Day 2 also went nowhere (still no response / no booked call). Email only, no call. Same thread. Drafted in the reply box on this lead on the due date (only if they haven't replied or booked). Copy below in case:
 
 Hi <First>,
 
 Helen mentioned you were interested, but we haven't had a chance to connect yet. Should I stop following up?
 ```
 
-## Step 6 — Slack report (one parent line + one thread reply per person)
+## Step 6 — Put today's email in Jordan's Close reply box (every run)
+
+Jordan works from Close: Tasks → lead → proofread the draft in the reply box → send. Every run,
+make sure each Day 1 / Day 2 / Day 5 email that is due today has a draft waiting, written as Jordan,
+in the lead's thread. Never draft ahead of the due date. This step runs even when step 1 found nothing.
+
+### 6a. Find today's tasks
+
+Close `find_tasks` with `assigned_to` = Jordan, `is_complete: false`, `due_date` from (today − 3 days)
+to (today + 1 day), America/Denver. Keep tasks whose due **date** (the `YYYY-MM-DD` part) is today or
+up to 3 days ago and whose text starts with one of:
+
+| Task text starts with | Kind |
+|---|---|
+| `Day 1 (Helen referral)` or `Helen re-referred this existing lead` | Day 1 |
+| `Day 2 check-in` | Day 2 |
+| `Day 5 breakup email` | Day 5 |
+
+Ignore every other task (e.g. plain "Follow up"). This also covers leads created before drafts existed.
+
+### 6b. Read the lead's email history
+
+For each kept task: `CLOSE_LIST_ACTIVITIES` with `activity_type: "email"`, `lead_ids: [<lead_id>]`, fields
+`id, status, direction, sender, to, cc, subject, user_id, email_account_id, thread_id, in_reply_to_id, date_created, body_text`.
+Also `CLOSE_LIST_ACTIVITIES` with `activity_type: "call"` for the same lead.
+
+- **Prospect email** = the task contact's email (`fetch_contact`), else the lead's first contact's email.
+- **Hand-off email** = the latest `sent` email from `helen@smbdealhunter.xyz` with `jkempster@smbdealhunter.xyz`
+  in To or CC. Its date is the hand-off date. Its `thread_id` is **the thread**. No hand-off email → skip the task.
+- Close often holds two copies of the same email (Helen's synced copy, with her `email_account_id`, and the
+  logged copy with no `email_account_id`). Treat them as one.
+
+### 6c. Decide (first matching rule wins)
+
+1. **A draft already exists**: any email on the lead with `status: "draft"` and `user_id` = Jordan →
+   skip (it's either today's draft or an earlier one he hasn't sent; never stack a second draft).
+2. **Jordan already sent this one**: Day 1 → any `sent` email from `jkempster@smbdealhunter.xyz` after the
+   hand-off. Day 2 / Day 5 → any `sent` email from him dated on or after the task's due date (America/Denver).
+   Skip (he sent it but hasn't ticked the task off).
+3. **The prospect replied to Jordan** (Day 2 / Day 5 only): any `incoming` email from the prospect dated after
+   Jordan's first `sent` email after the hand-off → skip, Jordan needs to write a real reply. (For Day 1, a
+   reply to Helen like "Sounds good, thanks!" doesn't count; still draft Day 1.)
+4. **A call is booked**: any `incoming` email on the lead from `@calendly.com` dated after the hand-off,
+   or the lead status is no longer Potential → skip.
+5. **Day 2 / Day 5 but Jordan never emailed**: no `sent` email from `jkempster@smbdealhunter.xyz`
+   after the hand-off → skip (the Day 2 / Day 5 copy assumes the Day 1 email went out).
+6. Otherwise → create the draft (6d).
+
+Skips are not reported (they'd repeat every hour); Jordan's task text still tells him what to do.
+
+### 6d. Write the draft
+
+**Body** (first name = the contact's first name; `Hi there,` when the lead is named after an email alias
+or you only have an email address):
+
+- **Day 1**: the email inside the Day 1 task text, i.e. everything after the line that starts with
+  `Email to send now` (or, on older tasks, everything from `Hi <First>,` onward). Use it verbatim, keep
+  `[today/tomorrow]` brackets. If the task has no email in it, use the step 5a fallback draft.
+- **Day 2**, one version only:
+  - Jordan logged an outbound call to the prospect since the hand-off (call activity, `direction: outbound`):
+    ```
+    Hi <First>,
+
+    Gave you a call yesterday but didn't reach you, wanted to follow up and try you again today.
+
+    If it's easier, grab 15 minutes here: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
+    ```
+  - No call logged:
+    ```
+    Hi <First>,
+
+    Sent over my availability yesterday but haven't seen a booked call come through yet, so wanted to follow up with it again: https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter
+
+    What's the best number to reach you at?
+    ```
+    Drop the last line if the contact already has a phone number in Close.
+- **Day 5**:
+  ```
+  Hi <First>,
+
+  Helen mentioned you were interested, but we haven't had a chance to connect yet. Should I stop following up?
+  ```
+
+**Signature**: the API does not add Jordan's signature, so append it yourself. `body_html` is the body,
+one `<div>` per line (empty line = `<div><br></div>`, links as `<a href="…">…</a>`), then two empty lines,
+then exactly:
+```html
+<div><strong><span data-system-generated="signature">Jordan Kempster - Partnership Development Associate</span></strong><span data-system-generated="signature"><br>Cell- +1 573-594-5747<br>Email- </span><a href="mailto:Jkempster@smbdealhunter.xyz"><span data-system-generated="signature">Jkempster@smbdealhunter.xyz</span></a><span data-system-generated="signature"><br></span><a href="https://calendly.com/jkempster-smbdealhunter/intro-call-with-smb-deal-hunter"><span data-system-generated="signature">Book a Call With Me</span></a><span data-system-generated="signature"><br></span><a href="https://www.linkedin.com/in/jordan-kempster-443a043a4/"><span data-system-generated="signature">Linkedin</span></a></div><div><span data-system-generated="signature"><img src="https://closeio-filepicker.s3.amazonaws.com/2026-08-06%2F2mdbyTLNZGdz16erUSTNxl%2F1786050260952-1778012856507.jpg" alt="1778012856507.jpg" style="width: 441px; height: 110.758px;"></span></div>
+```
+`body_text` is the plain body followed by:
+```
+
+
+Jordan Kempster - Partnership Development Associate
+Cell- +1 573-594-5747
+Email- Jkempster@smbdealhunter.xyz
+```
+
+**Create it**: `CLOSE_CREATE_EMAIL`, `account: "close_scarid-corin"`:
+- `status: "draft"` (never anything else)
+- `lead_id`, `contact_id` (the task's contact)
+- `user_id`: Jordan's user id, `email_account_id`: Jordan's email account, `sender: "Jordan Kempster <jkempster@smbdealhunter.xyz>"`
+  (all three, so the draft is Jordan's and sends from his mailbox)
+- `to`: `["<Prospect Name> <prospect email>"]`, `cc: ["helen@smbdealhunter.xyz"]`
+- `subject`: the thread's subject, with `Re: ` in front if it doesn't already start with it
+- `in_reply_to_id`: the latest non-draft email in the thread (prefer the copy that has an `email_account_id`,
+  so the reply threads in the prospect's inbox)
+- `body_html`, `body_text` as above
+
+Check the response has `status: "draft"` and `user_name: "Jordan Kempster"`. Note
+`<lead name>: Day <n> draft` for the report.
+
+## Step 7 — Slack report (one parent line + one thread reply per person)
 
 Collect every outcome from this run first. **If there are none (nothing created, no tasks
-added, nothing flagged), post nothing.** Otherwise:
+added, no drafts written, nothing flagged), post nothing.** Otherwise:
 
 1. Post the parent message to `C0BTCGZSF9R` with `markdown_text` exactly:
    `Hourly Close Lead Creation Report`
@@ -292,6 +413,12 @@ When the lead is named after the email alias, add this line right after the Emai
 _gmail:<Helen's reply message id>_
 ```
 
+**Drafts for Jordan (one reply for all of step 6, only if step 6 wrote at least one draft):**
+```
+:memo: **Drafts ready in Close for Jordan**
+• <Lead name>: Day <n> draft → https://app.close.com/lead/<lead_id>/
+```
+
 **Flag (nothing created)** — must start with the `<@U0BM6J8KM32>` mention so Sheila is notified:
 ```
 <@U0BM6J8KM32> :warning: **Needs your review — nothing created: <name or email>**
@@ -301,10 +428,10 @@ _gmail:<Helen's reply message id>_
 _gmail:<Helen's reply message id>_
 ```
 
-## Step 7 — Finish
+## Step 8 — Finish
 
 Print a short summary: messages scanned, leads created (with links), existing leads
-given tasks, flagged, skipped as already handled, and how many Day 1 drafts came from the
-tracker vs. the fallback. If any tool call failed partway
+given tasks, flagged, skipped as already handled, how many Day 1 drafts came from the
+tracker vs. the fallback, and the Close drafts written for Jordan (step 6). If any tool call failed partway
 through creating a lead, post a :warning: flag (with the `<@U0BM6J8KM32>` mention) describing exactly what was and
 wasn't created so a human can clean it up. Do not retry lead creation in that case.
