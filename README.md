@@ -14,6 +14,8 @@ When Helen replies to a prospect and CCs Jordan Kempster with a hand-off like
    contact = Jordan, Creation Date = Helen's reply date), a contact, a summary note,
    logs the prospect's email and Helen's reply, and adds Jordan's Day 1 / Day 2 /
    Day 5 follow-up tasks with the email templates.
+   If the prospect has no usable name (e.g. only initials like "B E" or "s m"), the lead
+   is created anyway, named after their email alias; the closer/setter renames it later.
    If the person already has a Close lead, no new lead is created; Jordan's three
    follow-up tasks are added to the existing lead instead.
 4. Posts one line, "Hourly Close Lead Creation Report", to `#helen-email-digest`,
