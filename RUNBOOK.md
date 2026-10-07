@@ -321,7 +321,8 @@ or you only have an email address):
 
 - **Day 1**: the email inside the Day 1 task text, i.e. everything after the line that starts with
   `Email to send now` (or, on older tasks, everything from `Hi <First>,` onward). Use it verbatim, keep
-  `[today/tomorrow]` brackets. If the task has no email in it, use the step 5a fallback draft.
+  `[today/tomorrow]` brackets, but leave out a trailing `Name unknown: …` line (that's a note for Jordan).
+  If the task has no email in it, use the step 5a fallback draft.
 - **Day 2**, one version only:
   - Jordan logged an outbound call to the prospect since the hand-off (call activity, `direction: outbound`):
     ```
