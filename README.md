@@ -18,7 +18,13 @@ When Helen replies to a prospect and CCs Jordan Kempster with a hand-off like
    is created anyway, named after their email alias; the closer/setter renames it later.
    If the person already has a Close lead, no new lead is created; Jordan's three
    follow-up tasks are added to the existing lead instead.
-4. Posts one line, "Hourly Close Lead Creation Report", to `#helen-email-digest`,
+4. Every hour, writes the email that's due today into the lead's reply box in Close as a
+   **draft from Jordan** (his mailbox and signature, on Helen's thread, Helen cc'd): the Day 1 email on
+   Day 1, the Day 2 follow-up on Day 2, the Day 5 breakup on Day 5. Jordan opens the task, proofreads,
+   edits and hits send. No draft is written ahead of its due date, or if the prospect already replied
+   to Jordan, booked a call, or there's an unsent draft from Jordan on the lead. Nothing is ever sent
+   automatically.
+5. Posts one line, "Hourly Close Lead Creation Report", to `#helen-email-digest`,
    with one thread reply per person (new lead / existing lead re-referred / needs review).
    Nothing is posted in hours with no activity. Ambiguous cases (same name but a different
    email, an Airtable client with no Close lead, several matching leads) are flagged as
